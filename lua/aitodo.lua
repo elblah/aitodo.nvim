@@ -15,6 +15,7 @@ local config = {
 local current_job_id = nil
 local job_stopped_intentionally = false
 local buffer_jobs = {}
+local ns = vim.api.nvim_create_namespace("aitodo_processing")
 
 local comment_prefixes = {
   python = "# AITODO: ",
@@ -128,6 +129,7 @@ local function process_file(prompt)
       if exit_code == 0 then
         vim.schedule(function()
           if vim.fn.bufexists(bufnr) == 1 then
+            vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
             vim.api.nvim_buf_call(bufnr, function()
               vim.cmd("edit!")
             end)
@@ -138,6 +140,9 @@ local function process_file(prompt)
         end)
       elseif not job_stopped_intentionally then
         vim.schedule(function()
+          if vim.fn.bufexists(bufnr) == 1 then
+            vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
+          end
           vim.bo[bufnr].modifiable = true
           vim.cmd("botright split")
           vim.api.nvim_win_set_buf(0, output_buf)
@@ -153,6 +158,17 @@ local function process_file(prompt)
     if ok and pid then
       buffer_jobs[bufnr] = pid
       print("Processing... please wait (PID: " .. pid .. ")")
+
+      -- Mark AITODO lines with virtual text
+      local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+      for i, line in ipairs(lines) do
+        if line:match("AITODO:") then
+          vim.api.nvim_buf_set_extmark(bufnr, ns, i - 1, 0, {
+            virt_text = {{"↻ Processing...", "Comment"}},
+            virt_text_pos = "eol",
+          })
+        end
+      end
     end
   end)
 end
@@ -165,6 +181,7 @@ local function stop_job()
 
   if job_pid then
     job_stopped_intentionally = true
+    vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
     local script = vim.env.AITODO_AICODER_SCRIPT or (vim.env.HOME .. "/bin/aicoder-nvim")
     local result = vim.fn.system(script .. " --stop " .. job_pid)
     print("Stop result: " .. result)
