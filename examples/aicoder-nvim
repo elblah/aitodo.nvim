@@ -1,0 +1,43 @@
+#!/bin/bash
+
+if [[ "$@" =~ --stop ]]; then
+    if ! command -v pstree > /dev/null; then
+        timeout 10 dunstify -u critical "Killing" "Make sure pstree is installed." &
+        exit 1
+    fi
+    PID=$2
+    timeout 10 dunstify -u low -t 1500 "Killing" "AICODER Pid: $PID" &
+    kill $(pstree -p $PID | grep -o '([0-9]\+)' | grep -o '[0-9]\+')
+    exit
+fi
+
+export API_MODEL=yourmodel
+export API_BASE_URL=https://yourbaseurlhere/v1
+export API_KEY="your key here"
+
+export YOLO_MODE=1
+export MAX_RETRIES=99999
+
+export TOOLS_ALLOW="read_file,write_file,list_directory"
+export PLUGINS_ALLOW="skills,empty_retry"
+
+export AICODER_DISABLE_COLORS=1
+
+export CONTEXT_SIZE=200000
+
+user_prompt="READ the file '$1' and do what is asked in the AITODO sections.\n*DO NOT leave AITODO lines unless you could not do what was asked*\n"
+
+if [[ -n "$AITODO_PROMPT_ADDITIONAL" ]]; then
+    user_prompt+="\n*Besides the requests to do in all AITODO sections you need also to do the additional request below in order to consider the task complete.*\n"
+    user_prompt+="\n*Additional Requests:* ${AITODO_PROMPT_ADDITIONAL}\n"
+fi
+
+if [[ -n "$AITODO_LINE" ]]; then
+    user_prompt+="\nExtra Info (not important): current cursor position(line=${AITODO_LINE}, column=${AITODO_COLUMN} - This position includes empty lines)\n"
+fi
+
+user_prompt="$(printf "$user_prompt")"
+
+echo -e "Prompt: ${user_prompt}\n\n"
+
+echo "$user_prompt" | timeout -k 10s 5m aicoder-start

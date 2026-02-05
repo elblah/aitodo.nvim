@@ -1,0 +1,127 @@
+*aitodo.txt*  AI-powered TODO processing plugin for Neovim
+
+Author:  elblah
+License: MIT (see LICENSE if available)
+
+==============================================================================
+CONTENTS                                        *aitodo-contents*
+
+    1. Introduction ................ |aitodo-introduction|
+    2. Installation ................ |aitodo-installation|
+    3. Usage ....................... |aitodo-usage|
+    4. Configuration .............. |aitodo-configuration|
+    5. Script Interface ............ |aitodo-script-interface|
+    6. API ........................ |aitodo-api|
+
+==============================================================================
+INTRODUCTION                                    *aitodo-introduction*
+
+Minimalist Neovim plugin for AI-powered TODO processing using AITODO
+comments.
+
+==============================================================================
+INSTALLATION                                    *aitodo-installation*
+
+Install using your favorite plugin manager:
+
+vim-plug: >
+    Plug 'elblah/aitodo.nvim'
+<
+
+lazy.nvim: >
+    { 'elblah/aitodo.nvim' }
+<
+
+==============================================================================
+USAGE                                           *aitodo-usage*
+
+Key mappings (default):
+
+    <C-a>          Insert AITODO comment (language-aware) in insert mode
+    <leader>aa     Process AITODOs in current file
+    <leader>ap     Process AITODOs with custom prompt
+    <leader>al     Open log file for current buffer
+    <leader>as     Stop currently running job
+
+==============================================================================
+CONFIGURATION                                   *aitodo-configuration*
+
+Configuration options: >
+
+    require("aitodo").setup({
+        log_enabled = true,           -- Enable logging (default: true)
+        log_dir = "/tmp/aitodo",      -- Log directory (default: /tmp/aitodo)
+        keymaps = {
+            insert_todo = "<C-a>",     -- Insert AITODO comment
+            process = "<leader>aa",    -- Process file
+            process_prompt = "<leader>ap>",  -- Process with prompt
+            open_log = "<leader>al",   -- Open log
+            stop = "<leader>as",       -- Stop job
+        },
+    })
+
+Disable specific keymaps by setting to false: >
+
+    require("aitodo").setup({
+        keymaps = {
+            insert_todo = false,  -- Disable this keymap
+        },
+    })
+
+Set the path to the aicoder script: >
+
+    export AITODO_AICODER_SCRIPT="/path/to/your/aicoder-script"
+
+Default: ~/bin/aicoder-nvim
+
+==============================================================================
+SCRIPT INTERFACE                               *aitodo-script-interface*
+
+Environment variables passed to your script: >
+
+    AITODO_FILEPATH              - Current file path
+    AITODO_PROMPT_ADDITIONAL      - Custom prompt (if provided)
+    AITODO_LINE, AITODO_COLUMN   - Cursor position
+    AITODO_BUFFER_ID             - Current buffer ID
+    AITODO_FILETYPE              - File type
+    AITODO_NVIM_PID              - Neovim process ID
+    AITODO_CWD                   - Working directory
+    AITODO_VISUAL_SELECTION       - Selected text (if any)
+    AICODER_DISABLE_COLORS=1      - Disable ANSI color codes
+
+Script invocation: >
+
+    <script> <filepath> [--prompt <additional_prompt>]
+    <script> --stop <pid>
+
+Your script should handle the |--stop| parameter to terminate gracefully.
+
+Log file location: >
+
+    /tmp/aitodo/aitodo-<nvim_pid>-<buffer_id>.log
+
+==============================================================================
+API                                                *aitodo-api*
+
+Public API functions: >
+
+    -- Configure the plugin
+    aitodo.setup({ ... })
+
+    -- Process current file (optional prompt)
+    aitodo.process("custom prompt")
+
+    -- Stop currently running job
+    aitodo.stop()
+
+    -- Get comment prefix for a filetype
+    aitodo.get_comment_prefix("python")
+
+    -- Get log path for a buffer
+    aitodo.get_log_path(1)
+
+    -- Get current visual selection (if any)
+    aitodo.get_visual_selection()
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
