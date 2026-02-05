@@ -66,6 +66,7 @@ local function process_file(prompt)
   vim.cmd("write")
 
   local bufnr = vim.api.nvim_get_current_buf()
+  local filepath = vim.api.nvim_buf_get_name(bufnr)
   local output_buf = vim.api.nvim_create_buf(false, true)
 
   print("Processing... please wait...")
@@ -124,15 +125,20 @@ local function process_file(prompt)
     on_exit = function(_, exit_code)
       current_job_id = nil
       buffer_jobs[bufnr] = nil
-      vim.bo[bufnr].modifiable = true
       if exit_code == 0 then
         vim.schedule(function()
-          vim.cmd("edit!")
+          if vim.fn.bufexists(bufnr) == 1 then
+            vim.api.nvim_buf_call(bufnr, function()
+              vim.cmd("edit!")
+            end)
+          end
+          vim.bo[bufnr].modifiable = true
           vim.cmd("redraw!")
           vim.notify("Done!", vim.log.levels.INFO)
         end)
       elseif not job_stopped_intentionally then
         vim.schedule(function()
+          vim.bo[bufnr].modifiable = true
           vim.cmd("botright split")
           vim.api.nvim_win_set_buf(0, output_buf)
         end)
