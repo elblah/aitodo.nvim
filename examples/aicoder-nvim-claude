@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [[ "$@" =~ --stop ]]; then
+    if ! command -v pstree > /dev/null; then
+        timeout 10 dunstify -u critical "Killing" "Make sure pstree is installed." &
+        exit 1
+    fi
+    PID=$2
+    timeout 10 dunstify -u low -t 1500 "Killing" "AICODER Pid: $PID" &
+    kill $(pstree -p $PID | grep -o '([0-9]\+)' | grep -o '[0-9]\+')
+    exit
+fi
+
+user_prompt="READ the file '$1' and do what is asked in the AITODO sections.\n*DO NOT leave AITODO lines unless you could not do what was asked*\n"
+
+if [[ -n "$AITODO_PROMPT_ADDITIONAL" ]]; then
+    user_prompt+="\n*Besides the requests to do in all AITODO sections you need also to do the additional request below in order to consider the task complete.*\n"
+    user_prompt+="\n*Additional Requests:* ${AITODO_PROMPT_ADDITIONAL}\n"
+fi
+
+#if [[ -n "$AITODO_LINE" ]]; then
+#    user_prompt+="\nExtra Info (not important): current cursor position(line=${AITODO_LINE}, column=${AITODO_COLUMN} - This position includes empty lines)\n"
+#fi
+
+user_prompt="$(printf "$user_prompt")"
+
+echo -e "Prompt: ${user_prompt}\n\n"
+
+timeout 10m claude --dangerously-skip-permissions --allowedTools Edit,Read,Write --print "$user_prompt"
