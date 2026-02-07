@@ -419,6 +419,14 @@ function M.get_visual_selection()
   return get_visual_selection()
 end
 
+function M.get_active_job_count()
+  local count = 0
+  for _ in pairs(buffer_jobs) do
+    count = count + 1
+  end
+  return count
+end
+
 setup_keymaps()
 
 return M
